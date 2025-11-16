@@ -1,2 +1,2 @@
-# flashcards-chart-se
-Flashcards for charts in Swedish
+# Flashcards html 
+Flashcards for charts in Swedish as I am learning

@@ -1,0 +1,1534 @@
+<!DOCTYPE html>
+<html lang="sv">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Sjökort – Flashcards</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        background: #f2f5fb;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
+      }
+
+      h1 {
+        margin-top: 20px;
+        font-size: 1.6rem;
+        text-align: center;
+      }
+
+      #app {
+        margin-top: 10px;
+        max-width: 760px;
+        width: 100%;
+        padding: 0 16px 40px;
+        box-sizing: border-box;
+      }
+
+      .card {
+        background: #ffffff;
+        border-radius: 14px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        padding: 24px 20px;
+        text-align: center;
+        cursor: pointer;
+        user-select: none;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        min-height: 270px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+      }
+
+      .subtitle {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 10px;
+      }
+
+      .symbol {
+        margin: 0 auto;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .symbol-svg {
+        width: 220px;
+        height: 160px;
+        max-width: 100%;
+      }
+
+      .answer {
+        font-size: 1.02rem;
+        margin-top: 10px;
+      }
+
+      .hidden {
+        visibility: hidden;
+      }
+
+      .controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 18px;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      button {
+        border-radius: 999px;
+        border: none;
+        padding: 8px 18px;
+        font-size: 0.95rem;
+        cursor: pointer;
+        background: #2563eb;
+        color: white;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+        transition: background 0.15s ease, transform 0.15s ease,
+          box-shadow 0.15s ease;
+      }
+
+      button:hover {
+        background: #1d4ed8;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(37, 99, 235, 0.5);
+      }
+
+      button.secondary {
+        background: #e5e7eb;
+        color: #111827;
+        box-shadow: none;
+      }
+
+      button.secondary:hover {
+        background: #d1d5db;
+        box-shadow: none;
+        transform: translateY(-1px);
+      }
+
+      .status {
+        font-size: 0.9rem;
+        color: #555;
+        margin-top: 10px;
+        text-align: center;
+      }
+
+      .hint {
+        font-size: 0.85rem;
+        color: #777;
+        margin-top: 6px;
+        text-align: center;
+      }
+
+      @media (max-width: 480px) {
+        .card {
+          padding: 18px 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Sjökort – Flashcards</h1>
+    <div id="app">
+      <div class="card" id="card">
+        <div class="subtitle" id="cardSideLabel">Framsida – Sjökortssymbol</div>
+        <div class="symbol" id="symbol"></div>
+        <div class="answer hidden" id="answer"></div>
+      </div>
+
+      <div class="controls">
+        <button id="prevBtn" class="secondary">◀ Föregående</button>
+        <button id="flipBtn">Visa / dölj svar</button>
+        <button id="nextBtn" class="secondary">Nästa ▶</button>
+        <button id="randomBtn" class="secondary">Slumpa</button>
+      </div>
+
+      <div class="status" id="statusText"></div>
+      <div class="hint">
+        Klicka på kortet eller ”Visa / dölj svar” för att se facit.
+      </div>
+    </div>
+
+    <script>
+      const svgCommonAttrs =
+        'viewBox="0 0 100 80" class="symbol-svg" xmlns="http://www.w3.org/2000/svg"';
+
+      /*
+      Viktigt:
+      - Symbolerna är stiliserade efter INT-1 / Kort 1.
+      - Om du vill göra dem ännu mer exakta, justera enskilda <svg>-strängar.
+      - För fler kort: kopiera ett objekt i cards-arrayen och justera title/svg/answer.
+    */
+
+      const cards = [
+        /* ========= DJUP & KURVOR ========= */
+        {
+          title: "Största djup (ramad djupsiffra)",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="white"/>
+      <rect x="35" y="25" width="30" height="25" fill="none" stroke="black" stroke-width="1.3"/>
+      <text x="50" y="43" font-size="18" text-anchor="middle" fill="black">12</text>
+    </svg>
+  `,
+          answer:
+            "Rutad djupsiffra = största djup (ofta i bassäng/hamnområde).",
+        },
+        {
+          title: "Djupområde – grunt (ljusblå)",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#e0f2fe"/>
+      <text x="25" y="35" font-size="10" fill="#1d4ed8">3.2</text>
+      <text x="60" y="50" font-size="10" fill="#1d4ed8">4.1</text>
+      <text x="40" y="65" font-size="10" fill="#1d4ed8">2.7</text>
+    </svg>
+  `,
+          answer: "Ljusblå yta med grunda djup (typiskt 0–6 m).",
+        },
+        {
+          title: "Djupområde – djupare (mörkare blå)",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#bfdbfe"/>
+      <text x="25" y="35" font-size="10" fill="#1e3a8a">15</text>
+      <text x="60" y="50" font-size="10" fill="#1e3a8a">18</text>
+      <text x="40" y="65" font-size="10" fill="#1e3a8a">22</text>
+    </svg>
+  `,
+          answer: "Mörkare blå yta med större djup (t.ex. >10 m).",
+        },
+        {
+          title: "Muddrad ränna",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#e0f2fe"/>
+      <path d="M20,40 L80,40" stroke="black" stroke-width="3"/>
+      <path d="M20,46 L80,46" stroke="black" stroke-width="1" stroke-dasharray="4 3"/>
+      <text x="50" y="60" font-size="10" text-anchor="middle" fill="black">10.0</text>
+    </svg>
+  `,
+          answer: "Muddrad ränna med angivet ramdjup, här 10.0 m.",
+        },
+        {
+          title: "Fin sand – fS",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="white"/>
+      <text x="50" y="35" font-size="22" text-anchor="middle" fill="black">7</text>
+      <text x="50" y="55" font-size="14" text-anchor="middle" fill="black">fS</text>
+    </svg>
+  `,
+          answer: "fS = fin sand som bottenbeskaffenhet.",
+        },
+        {
+          title: "Grovt grus – cG",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="white"/>
+      <text x="50" y="35" font-size="22" text-anchor="middle" fill="black">8</text>
+      <text x="50" y="55" font-size="14" text-anchor="middle" fill="black">cG</text>
+    </svg>
+  `,
+          answer: "cG = grovt grus (coarse gravel).",
+        },
+        {
+          title: "Snäckskal – Sh",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="white"/>
+      <text x="50" y="35" font-size="22" text-anchor="middle" fill="black">6</text>
+      <text x="50" y="55" font-size="14" text-anchor="middle" fill="black">Sh</text>
+    </svg>
+  `,
+          answer: "Sh = snäckskal (shell).",
+        },
+        {
+          title: "Pebbles / klappersten – Pbl",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="white"/>
+      <text x="50" y="35" font-size="22" text-anchor="middle" fill="black">5</text>
+      <text x="50" y="55" font-size="14" text-anchor="middle" fill="black">Pbl</text>
+    </svg>
+  `,
+          answer: "Pbl = pebbles / klappersten som bottenmaterial.",
+        },
+        {
+          title: "Botten: S M (sand med gyttja)",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="white"/>
+      <text x="50" y="35" font-size="22" text-anchor="middle" fill="black">9</text>
+      <text x="50" y="55" font-size="14" text-anchor="middle" fill="black">S M</text>
+    </svg>
+  `,
+          answer: "S M = mest sand, inslag av gyttja/mudder.",
+        },
+        {
+          title: "Botten: M S (gyttja med sand)",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="white"/>
+      <text x="50" y="35" font-size="22" text-anchor="middle" fill="black">9</text>
+      <text x="50" y="55" font-size="14" text-anchor="middle" fill="black">M S</text>
+    </svg>
+  `,
+          answer: "M S = mest gyttja/mudder, inslag av sand.",
+        },
+        {
+          title: "Grund med minsta djup markerat",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#e0f2fe"/>
+      <circle cx="35" cy="40" r="5" fill="white" stroke="black" stroke-width="1.2"/>
+      <text x="60" y="45" font-size="12" fill="black">1.2</text>
+    </svg>
+  `,
+          answer:
+            "Litet märke (cirkel) med djup, här 1,2 m, anger minsta djup på grundet.",
+        },
+        {
+          title: "Sten/skär över vattenytan",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#bbf7d0"/>
+      <polygon points="45,45 55,45 52,50 48,50" fill="black"/>
+    </svg>
+  `,
+          answer:
+            "Stensymbol på landnära yta = skär/sten som står över vattenytan.",
+        },
+        {
+          title: "Sten som blottas vid lågvatten",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#e0f2fe"/>
+      <polygon points="45,45 55,45 52,50 48,50" fill="black"/>
+      <circle cx="50" cy="45" r="8" fill="none" stroke="black" stroke-width="1"/>
+    </svg>
+  `,
+          answer:
+            "Sten i vattnet med ring runt = blottas vid lågvatten, risk nära ytan.",
+        },
+        {
+          title: "Vrak som sticker upp över ytan",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#e0f2fe"/>
+      <path d="M25,50 L75,50 L65,55 L35,55 Z" fill="none" stroke="black" stroke-width="1.5"/>
+      <line x1="40" y1="45" x2="60" y2="45" stroke="black" stroke-width="1.5"/>
+      <text x="50" y="30" font-size="10" text-anchor="middle" fill="black">Wk</text>
+      <path d="M20,60 Q35,58 50,60 T80,60" stroke="black" stroke-width="1" fill="none"/>
+    </svg>
+  `,
+          answer:
+            "Vrak över vattenytan – delar av vraket sticker upp och syns.",
+        },
+        {
+          title: "Foul area – område med hinder/vrakdelar",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#e5e7eb"/>
+      <rect x="15" y="20" width="70" height="40" fill="none" stroke="black" stroke-width="1" stroke-dasharray="4 3"/>
+      <text x="50" y="45" font-size="12" text-anchor="middle" fill="black">Foul</text>
+    </svg>
+  `,
+          answer:
+            "Foul area – område med oren botten, vrakdelar eller andra hinder.",
+        },
+        {
+          title: "Enstaka påle / stake i vatten",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#e0f2fe"/>
+      <rect x="0" y="55" width="100" height="25" fill="#bbf7d0"/>
+      <line x1="50" y1="40" x2="50" y2="75" stroke="black" stroke-width="2"/>
+    </svg>
+  `,
+          answer: "En lodrät linje från botten upp = påle / stake i vattnet.",
+        },
+        {
+          title: "Område med gamla pålar / rester av brygga",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#e0f2fe"/>
+      <rect x="0" y="55" width="100" height="25" fill="#bbf7d0"/>
+      <line x1="35" y1="45" x2="35" y2="70" stroke="black" stroke-width="1.5"/>
+      <line x1="50" y1="47" x2="50" y2="72" stroke="black" stroke-width="1.5"/>
+      <line x1="65" y1="44" x2="65" y2="69" stroke="black" stroke-width="1.5"/>
+    </svg>
+  `,
+          answer:
+            "Flera korta pålar i grupp = rester av brygga/pålar under ytan.",
+        },
+        {
+          title: "Trafiksepareringssystem (TSS)",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#e0f2fe"/>
+      <rect x="10" y="20" width="80" height="15" fill="none" stroke="magenta" stroke-width="1.2" stroke-dasharray="4 3"/>
+      <rect x="10" y="45" width="80" height="15" fill="none" stroke="magenta" stroke-width="1.2" stroke-dasharray="4 3"/>
+      <polyline points="20,28 30,28 32,26" fill="none" stroke="magenta" stroke-width="1"/>
+      <polyline points="80,52 70,52 68,50" fill="none" stroke="magenta" stroke-width="1"/>
+    </svg>
+  `,
+          answer:
+            "Trafiksepareringssystem (TSS) – särskilda trafikleder för större fartyg.",
+        },
+        {
+          title: "Rekommenderad kurslinje med pil",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#e0f2fe"/>
+      <line x1="15" y1="65" x2="80" y2="20" stroke="black" stroke-width="2"/>
+      <polygon points="80,20 75,22 76,16" fill="black"/>
+    </svg>
+  `,
+          answer: "Tjock linje med pil = rekommenderad kurslinje för fartyg.",
+        },
+        {
+          title: "Gräns för ankringsområde",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#e0f2fe"/>
+      <rect x="15" y="20" width="70" height="40" fill="none" stroke="magenta" stroke-width="1.5" stroke-dasharray="4 3"/>
+      <path d="M50 30 v12 M44 34 h12 M50 42
+               c0 6 -4 10 -10 10 h-3
+               M50 42
+               c0 6 4 10 10 10 h3"
+            stroke="black" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <circle cx="50" cy="28" r="3" fill="black"/>
+    </svg>
+  `,
+          answer: "Magenta-ram + ankarsymbol = ankringsområde.",
+        },
+        {
+          title: "Undervattenskabel (tele)",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#e0f2fe"/>
+      <line x1="10" y1="40" x2="90" y2="40" stroke="black" stroke-width="1.5"/>
+      <line x1="20" y1="35" x2="20" y2="45" stroke="black" stroke-width="1"/>
+      <line x1="40" y1="35" x2="40" y2="45" stroke="black" stroke-width="1"/>
+      <line x1="60" y1="35" x2="60" y2="45" stroke="black" stroke-width="1"/>
+      <line x1="80" y1="35" x2="80" y2="45" stroke="black" stroke-width="1"/>
+    </svg>
+  `,
+          answer: "Undervattenskabel (tele) – linje med små tvärstreck.",
+        },
+        {
+          title: "Undervattenskabel – el (högspänning)",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#e0f2fe"/>
+      <line x1="10" y1="40" x2="90" y2="40" stroke="black" stroke-width="1.5"/>
+      <polyline points="25,35 27,40 23,40" fill="none" stroke="black" stroke-width="1"/>
+      <polyline points="50,35 52,40 48,40" fill="none" stroke="black" stroke-width="1"/>
+      <polyline points="75,35 77,40 73,40" fill="none" stroke="black" stroke-width="1"/>
+      <text x="50" y="55" font-size="9" text-anchor="middle" fill="black">⚡</text>
+    </svg>
+  `,
+          answer:
+            "Elkabel under vatten – ofta markerad särskilt, t.ex. med blixtsymbol.",
+        },
+        {
+          title: "Rörledning (pipeline)",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#e0f2fe"/>
+      <line x1="10" y1="40" x2="90" y2="40" stroke="black" stroke-width="1.2"/>
+      <circle cx="25" cy="40" r="2" fill="white" stroke="black" stroke-width="1"/>
+      <circle cx="50" cy="40" r="2" fill="white" stroke="black" stroke-width="1"/>
+      <circle cx="75" cy="40" r="2" fill="white" stroke="black" stroke-width="1"/>
+    </svg>
+  `,
+          answer: "Rörledning under vatten – linje med små ringar.",
+        },
+        {
+          title: "Administrativ gräns över land/hav",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#bbf7d0"/>
+      <rect width="100" height="30" y="50" fill="#e0f2fe"/>
+      <path d="M5,20 L95,60" stroke="#4b5563" stroke-width="1" stroke-dasharray="6 3 1 3"/>
+    </svg>
+  `,
+          answer: "Administrativ gräns (kommun, län etc.), långstreckad linje.",
+        },
+        {
+          title: "Sjögräns / territorialgräns",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#e0f2fe"/>
+      <path d="M5,40 L95,40" stroke="magenta" stroke-width="1.5" stroke-dasharray="6 4"/>
+    </svg>
+  `,
+          answer:
+            "Sjö- eller territorialgräns – magenta streckad linje i havet.",
+        },
+        {
+          title: "Militärt skyddsområde",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#fee2e2"/>
+      <rect x="15" y="20" width="70" height="40" fill="none" stroke="magenta" stroke-width="1.5" stroke-dasharray="4 3"/>
+      <text x="50" y="45" font-size="10" text-anchor="middle" fill="black">Militärt</text>
+    </svg>
+  `,
+          answer:
+            "Militärt skyddsområde – ofta förbjudet att gå iland eller vistas.",
+        },
+        {
+          title: "Fågelskyddsområde",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#fef9c3"/>
+      <rect x="15" y="20" width="70" height="40" fill="none" stroke="magenta" stroke-width="1.5" stroke-dasharray="4 3"/>
+      <path d="M45,40 c2,-4 8,-4 10,0" stroke="black" stroke-width="1" fill="none"/>
+      <path d="M48,40 L45,43" stroke="black" stroke-width="1"/>
+    </svg>
+  `,
+          answer:
+            "Fågelskyddsområde – tillträdesrestriktioner, ofta under vissa tider på året.",
+        },
+        {
+          title: "Gästhamn",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#e0f2fe"/>
+      <rect x="0" y="55" width="100" height="25" fill="#bbf7d0"/>
+      <path d="M30 60 v12 M24 64 h12 M30 72
+               c0 6 -4 9 -9 9 h-3
+               M30 72
+               c0 6 4 9 9 9 h3"
+            stroke="black" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+      <circle cx="30" cy="58" r="2.5" fill="black"/>
+      <text x="60" y="65" font-size="11" fill="black">Gästhamn</text>
+    </svg>
+  `,
+          answer: "Gästhamn – ofta markerad med ankare och text/symbol.",
+        },
+        {
+          title: "Marina / båtservice",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#e0f2fe"/>
+      <rect x="0" y="55" width="100" height="25" fill="#bbf7d0"/>
+      <path d="M20,65 Q30,55 40,65 L20,65" fill="white" stroke="black" stroke-width="1.2"/>
+      <path d="M55,60 L60,55 L67,62" fill="none" stroke="black" stroke-width="1.8"/>
+    </svg>
+  `,
+          answer:
+            "Marina/båtservice – ofta särskild symbol för båtservice/verkstad.",
+        },
+        {
+          title: "Bränslestation (sjömack)",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#e0f2fe"/>
+      <rect x="0" y="55" width="100" height="25" fill="#bbf7d0"/>
+      <rect x="40" y="43" width="12" height="17" fill="white" stroke="black" stroke-width="1.5"/>
+      <rect x="42" y="45" width="8" height="7" fill="white" stroke="black" stroke-width="1"/>
+      <circle cx="52" cy="48" r="2" fill="black"/>
+      <text x="46" y="60" font-size="8" fill="black">F</text>
+    </svg>
+  `,
+          answer:
+            "Bränslestation (sjömack) – t.ex. bensinpumpsymbol nära brygga.",
+        },
+        {
+          title: "Toalett / WC i hamn",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#e0f2fe"/>
+      <rect x="0" y="55" width="100" height="25" fill="#bbf7d0"/>
+      <rect x="40" y="45" width="20" height="14" fill="white" stroke="black" stroke-width="1.5"/>
+      <text x="50" y="56" font-size="9" text-anchor="middle" fill="black">WC</text>
+    </svg>
+  `,
+          answer: "WC-symbol nära hamn = toalett för båtfolk.",
+        },
+        {
+          title: "Vattenpåfyllning",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#e0f2fe"/>
+      <rect x="0" y="55" width="100" height="25" fill="#bbf7d0"/>
+      <rect x="42" y="40" width="10" height="10" fill="white" stroke="black" stroke-width="1.3"/>
+      <path d="M52,43 h6 v5" stroke="black" stroke-width="1.3" fill="none"/>
+      <circle cx="58" cy="50" r="1.7" fill="#2563eb"/>
+      <text x="50" y="65" font-size="8" text-anchor="middle" fill="black">Vatten</text>
+    </svg>
+  `,
+          answer: "Symbol för dricksvattenpåfyllning i hamn.",
+        },
+        {
+          title: "Sugtömningsstation",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#e0f2fe"/>
+      <rect x="0" y="55" width="100" height="25" fill="#bbf7d0"/>
+      <rect x="40" y="42" width="20" height="15" fill="white" stroke="black" stroke-width="1.3"/>
+      <path d="M45,57 Q50,62 55,57" stroke="black" stroke-width="1.3" fill="none"/>
+      <text x="50" y="66" font-size="8" text-anchor="middle" fill="black">SUG</text>
+    </svg>
+  `,
+          answer: "Sugtömningsstation för septiktank/latrin.",
+        },
+        {
+          title: "Slip för fritidsbåt (båt på ramp)",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#e0f2fe"/>
+      <rect x="0" y="55" width="100" height="25" fill="#bbf7d0"/>
+      <line x1="20" y1="55" x2="40" y2="75" stroke="black" stroke-width="2"/>
+      <path d="M25,52 Q32,48 39,52 L25,52" fill="white" stroke="black" stroke-width="1.3"/>
+    </svg>
+  `,
+          answer: "Slip med liten båt = ramp för fritidsbåtar.",
+        },
+        {
+          title: "Bro – olika segelfri höjd per spann",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#e0f2fe"/>
+      <rect x="0" y="60" width="100" height="20" fill="#bbf7d0"/>
+      <rect x="10" y="50" width="80" height="4" fill="black"/>
+      <text x="23" y="46" font-size="8" text-anchor="middle" fill="black">10 m</text>
+      <text x="50" y="46" font-size="8" text-anchor="middle" fill="black">12 m</text>
+      <text x="77" y="46" font-size="8" text-anchor="middle" fill="black">9 m</text>
+    </svg>
+  `,
+          answer:
+            "Bro med flera spann – olika segelfri höjd under olika delar.",
+        },
+        {
+          title: "Överhängande konstruktion över vattnet",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#e0f2fe"/>
+      <rect x="0" y="55" width="50" height="25" fill="#bbf7d0"/>
+      <rect x="10" y="35" width="5" height="20" fill="black"/>
+      <rect x="15" y="35" width="50" height="3" fill="black"/>
+      <text x="60" y="32" font-size="9" fill="black">14 m</text>
+    </svg>
+  `,
+          answer:
+            "Överhängande kran/transportband med angiven fri höjd över vattnet.",
+        },
+        {
+          title: "Lateralport (röd & grön boj tillsammans)",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#e0f2fe"/>
+      <rect x="0" y="55" width="100" height="25" fill="#bbf7d0"/>
+      <line x1="35" y1="55" x2="35" y2="75" stroke="black" stroke-width="1.5"/>
+      <polygon points="30,40 40,40 40,55 30,55" fill="green" stroke="black" stroke-width="1"/>
+      <line x1="65" y1="55" x2="65" y2="75" stroke="black" stroke-width="1.5"/>
+      <polygon points="60,40 70,40 70,55 60,55" fill="red" stroke="black" stroke-width="1"/>
+    </svg>
+  `,
+          answer: "Grön och röd lateralboj i par – port i farled.",
+        },
+        {
+          title: "Lysboj (ljusprick)",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#e0f2fe"/>
+      <rect x="0" y="55" width="100" height="25" fill="#bbf7d0"/>
+      <line x1="50" y1="55" x2="50" y2="75" stroke="black" stroke-width="1.5"/>
+      <circle cx="50" cy="43" r="6" fill="yellow" stroke="black" stroke-width="1"/>
+      <path d="M50,33 l0,-6" stroke="black" stroke-width="1"/>
+      <circle cx="50" cy="25" r="2" fill="none" stroke="black" stroke-width="1"/>
+    </svg>
+  `,
+          answer:
+            "Lysboj / ljusprick – boj med eget ljus, ofta med ljuskaraktär angiven.",
+        },
+        {
+          title: "Sjömärke med radarreflektor",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#e0f2fe"/>
+      <rect x="0" y="55" width="100" height="25" fill="#bbf7d0"/>
+      <line x1="40" y1="55" x2="40" y2="75" stroke="black" stroke-width="1.5"/>
+      <rect x="35" y="40" width="10" height="15" fill="black"/>
+      <rect x="55" y="45" width="8" height="8" fill="white" stroke="black" stroke-width="1"/>
+    </svg>
+  `,
+          answer:
+            "Märke utrustat med radarreflektor – markerar sig tydligare på radar.",
+        },
+        {
+          title: "Bakre ensmärke (enslinje)",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#bbf7d0"/>
+      <rect y="40" width="100" height="40" fill="#e0f2fe"/>
+      <line x1="30" y1="70" x2="70" y2="20" stroke="magenta" stroke-width="1.2" stroke-dasharray="4 3"/>
+      <rect x="28" y="55" width="4" height="15" fill="black"/>
+      <rect x="66" y="25" width="5" height="20" fill="black"/>
+    </svg>
+  `,
+          answer:
+            "Främre och bakre ensmärke i linje – används som enslinje för kurs.",
+        },
+        {
+          title: "Specialmärke för kabelområde",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#e0f2fe"/>
+      <rect x="0" y="55" width="100" height="25" fill="#bbf7d0"/>
+      <line x1="50" y1="55" x2="50" y2="75" stroke="black" stroke-width="1.5"/>
+      <rect x="45" y="40" width="10" height="12" fill="#facc15" stroke="black" stroke-width="1"/>
+      <line x1="20" y1="40" x2="80" y2="40" stroke="black" stroke-width="1.2"/>
+      <line x1="30" y1="35" x2="30" y2="45" stroke="black" stroke-width="1"/>
+      <line x1="50" y1="35" x2="50" y2="45" stroke="black" stroke-width="1"/>
+      <line x1="70" y1="35" x2="70" y2="45" stroke="black" stroke-width="1"/>
+    </svg>
+  `,
+          answer:
+            "Gult specialmärke i kabelområde – ofta ankrings- och fiskeförbud.",
+        },
+        {
+          title: "Sektorfyr (röd/grön/vit sektor)",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="white"/>
+      <rect x="46" y="42" width="8" height="18" fill="black"/>
+      <polygon points="50,30 44,42 56,42" fill="white" stroke="black" stroke-width="1.2"/>
+      <path d="M52,32 L80,22" stroke="red" stroke-width="2"/>
+      <path d="M52,36 L80,36" stroke="white" stroke-width="2"/>
+      <path d="M52,40 L80,50" stroke="green" stroke-width="2"/>
+    </svg>
+  `,
+          answer:
+            "Sektorfyr med olika färg i olika riktningar (röd, vit, grön).",
+        },
+        {
+          title: "Racon (radarfyr)",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="white"/>
+      <rect x="46" y="42" width="8" height="18" fill="black"/>
+      <polygon points="50,30 44,42 56,42" fill="white" stroke="black" stroke-width="1.2"/>
+      <circle cx="50" cy="36" r="16" fill="none" stroke="magenta" stroke-width="1.5" stroke-dasharray="3 2"/>
+      <text x="50" y="65" font-size="9" text-anchor="middle" fill="black">Racon</text>
+    </svg>
+  `,
+          answer:
+            "Racon – radarfyr som ger särskild ekobild/morsekaraktär på radar.",
+        },
+        {
+          title: "AIS AtoN på sjömärke/fyr",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="white"/>
+      <rect x="46" y="42" width="8" height="18" fill="black"/>
+      <polygon points="50,30 44,42 56,42" fill="white" stroke="black" stroke-width="1.2"/>
+      <path d="M60,30 C65,27 70,27 75,30" stroke="magenta" stroke-width="1.2" fill="none"/>
+      <path d="M60,26 C66,23 69,23 75,26" stroke="magenta" stroke-width="1.2" fill="none"/>
+    </svg>
+  `,
+          answer: "AIS AtoN – fyr/sjömärke som sänder AIS-information.",
+        },
+        {
+          title: "Lanternlinjer / sektorgränser",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="white"/>
+      <rect x="46" y="42" width="8" height="18" fill="black"/>
+      <polygon points="50,30 44,42 56,42" fill="white" stroke="black" stroke-width="1.2"/>
+      <line x1="52" y1="32" x2="82" y2="22" stroke="black" stroke-width="0.8" stroke-dasharray="3 2"/>
+      <line x1="52" y1="38" x2="82" y2="38" stroke="black" stroke-width="0.8" stroke-dasharray="3 2"/>
+      <line x1="52" y1="44" x2="82" y2="54" stroke="black" stroke-width="0.8" stroke-dasharray="3 2"/>
+    </svg>
+  `,
+          answer:
+            "Tunnt streckade linjer ut från fyr = gränser mellan sektorer.",
+        },
+        {
+          title: "Vass / säv längs strand",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#e0f2fe"/>
+      <rect x="0" y="50" width="100" height="30" fill="#bbf7d0"/>
+      <line x1="15" y1="50" x2="15" y2="40" stroke="#15803d" stroke-width="1.2"/>
+      <line x1="20" y1="50" x2="18" y2="38" stroke="#15803d" stroke-width="1.2"/>
+      <line x1="25" y1="50" x2="27" y2="39" stroke="#15803d" stroke-width="1.2"/>
+      <line x1="32" y1="50" x2="30" y2="41" stroke="#15803d" stroke-width="1.2"/>
+    </svg>
+  `,
+          answer:
+            "Vass/säv längs strand – grunt och ofta svårtillgängligt med båt.",
+        },
+        {
+          title: "Sumpmark / blöt mark nära strand",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#e0f2fe"/>
+      <rect x="0" y="45" width="100" height="35" fill="#bbf7d0"/>
+      <path d="M10,60 Q15,55 20,60 T30,60 T40,60" stroke="#4b5563" stroke-width="0.8" fill="none"/>
+      <line x1="18" y1="55" x2="18" y2="50" stroke="#15803d" stroke-width="1"/>
+    </svg>
+  `,
+          answer: "Sumpmark/våtmark – blött område nära strand.",
+        },
+        {
+          title: "Större byggnad / fabrik",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#bbf7d0"/>
+      <rect x="30" y="35" width="30" height="20" fill="white" stroke="black" stroke-width="1.5"/>
+      <rect x="65" y="25" width="6" height="30" fill="white" stroke="black" stroke-width="1.5"/>
+      <path d="M68,25 Q70,20 72,25" stroke="black" stroke-width="1"/>
+    </svg>
+  `,
+          answer: "Större byggnad/fabrik – bra landmärke.",
+        },
+        {
+          title: "Skorsten / chimney",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#bbf7d0"/>
+      <rect x="47" y="25" width="6" height="30" fill="white" stroke="black" stroke-width="1.5"/>
+      <path d="M48,25 Q50,22 52,25" stroke="black" stroke-width="1"/>
+    </svg>
+  `,
+          answer: "Hög skorsten – tydligt landmärke.",
+        },
+        {
+          title: "Radartorn / radiomast",
+          svg: `
+    <svg ${svgCommonAttrs}>
+      <rect width="100" height="80" fill="#bbf7d0"/>
+      <line x1="50" y1="55" x2="50" y2="25" stroke="black" stroke-width="2"/>
+      <circle cx="50" cy="23" r="4" fill="white" stroke="black" stroke-width="1.5"/>
+      <path d="M50,18 C55,15 60,15 65,18" stroke="black" stroke-width="1" fill="none"/>
+    </svg>
+  `,
+          answer: "Radartorn/radiomast – högt tekniskt landmärke.",
+        },
+        {
+          title: "Djupsiffra (enkelt djup)",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect x="0" y="0" width="100" height="80" fill="white"/>
+            <text x="50" y="45" font-size="26" text-anchor="middle" fill="black">12</text>
+          </svg>
+        `,
+          answer:
+            "Djupangivelse i meter (här 12 m). Vanlig djupsiffra på sjökort.",
+        },
+        {
+          title: "Djup mindre än omgivningen (farligt grund)",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="white"/>
+            <text x="50" y="45" font-size="26" text-anchor="middle" fill="black">3.4</text>
+            <line x1="20" y1="50" x2="80" y2="50" stroke="black" stroke-width="1"/>
+          </svg>
+        `,
+          answer:
+            "Djup understruket (3,4 m) = minsta djup i en trång passage / farled.",
+        },
+        {
+          title: "Djup ej tillräckligt undersökt",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="white"/>
+            <text x="50" y="45" font-size="22" text-anchor="middle" fill="black">(9)</text>
+          </svg>
+        `,
+          answer:
+            "Djup inom parentes = djupet är osäkert / ej tillräckligt sjömätt.",
+        },
+        {
+          title: "Djupkurva 3 m",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="white"/>
+            <path d="M10,50 Q30,40 50,45 T90,42" stroke="blue" stroke-width="1.2" fill="none"/>
+            <text x="20" y="38" font-size="10" fill="blue">3</text>
+          </svg>
+        `,
+          answer:
+            "Djupkurva (isobath) för 3 m. Förbinder positioner med samma djup.",
+        },
+        {
+          title: "Djupkurva 6 m",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="white"/>
+            <path d="M10,45 Q30,55 50,50 T90,52" stroke="blue" stroke-width="1" fill="none"/>
+            <text x="25" y="60" font-size="10" fill="blue">6</text>
+          </svg>
+        `,
+          answer: "Djupkurva 6 m. Vanlig viktig kurva i skärgårdsnavigering.",
+        },
+        {
+          title: "Icke sjömätt område",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="#eef2ff"/>
+            <path d="M5,20 L95,20 M5,36 L95,36 M5,52 L95,52" stroke="#9ca3af" stroke-width="1" stroke-dasharray="2 4"/>
+            <text x="50" y="70" font-size="10" text-anchor="middle" fill="#111">Ej sjömätt</text>
+          </svg>
+        `,
+          answer:
+            "Område markerat som ej fullständigt sjömätt – extra försiktighet.",
+        },
+
+        /* ========= BOTTENBESKAFFNING ========= */
+
+        {
+          title: "Sand (S)",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="white"/>
+            <text x="50" y="38" font-size="22" text-anchor="middle" fill="black">8</text>
+            <text x="50" y="57" font-size="14" text-anchor="middle" fill="black">S</text>
+          </svg>
+        `,
+          answer: "S under djupsiffra = sandbotten.",
+        },
+        {
+          title: "Lera (Cy)",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="white"/>
+            <text x="50" y="38" font-size="22" text-anchor="middle" fill="black">9</text>
+            <text x="50" y="57" font-size="14" text-anchor="middle" fill="black">Cy</text>
+          </svg>
+        `,
+          answer: "Cy = lera (clay) som bottenmaterial.",
+        },
+        {
+          title: "Gyttja / mudder (M)",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="white"/>
+            <text x="50" y="38" font-size="22" text-anchor="middle" fill="black">7</text>
+            <text x="50" y="57" font-size="14" text-anchor="middle" fill="black">M</text>
+          </svg>
+        `,
+          answer: "M = gyttja / mudderbotten.",
+        },
+        {
+          title: "Grus (G)",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="white"/>
+            <text x="50" y="38" font-size="22" text-anchor="middle" fill="black">11</text>
+            <text x="50" y="57" font-size="14" text-anchor="middle" fill="black">G</text>
+          </svg>
+        `,
+          answer: "G = grusbotten.",
+        },
+        {
+          title: "Sten (St)",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="white"/>
+            <text x="50" y="38" font-size="22" text-anchor="middle" fill="black">6</text>
+            <text x="50" y="57" font-size="14" text-anchor="middle" fill="black">St</text>
+          </svg>
+        `,
+          answer: "St = stenig botten.",
+        },
+        {
+          title: "Morän (MORÄN)",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="white"/>
+            <text x="50" y="34" font-size="18" text-anchor="middle" fill="black">10</text>
+            <text x="50" y="55" font-size="12" text-anchor="middle" fill="black">M</text>
+          </svg>
+        `,
+          answer: "M kan också användas för moränbotten (blandat material).",
+        },
+
+        /* ========= GRUND, VRak, HINDER ========= */
+
+        {
+          title: "Undervattenssten (farlig)",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="white"/>
+            <line x1="50" y1="25" x2="50" y2="55" stroke="black" stroke-width="3"/>
+            <line x1="35" y1="40" x2="65" y2="40" stroke="black" stroke-width="3"/>
+          </svg>
+        `,
+          answer: "Plus-tecken i vattnet = undervattenssten / grund.",
+        },
+        {
+          title: "Bränning / grund i ytan",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="white"/>
+            <path d="M20,50 Q30,40 40,50 T60,50 T80,50" stroke="black" stroke-width="1.5" fill="none"/>
+            <path d="M30,45 L35,40 L40,45" stroke="black" fill="none"/>
+          </svg>
+        `,
+          answer:
+            "Vågfigur / bränningssymbol indikerar grund i eller nära ytan.",
+        },
+        {
+          title: "Vrak (okänt djup)",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="white"/>
+            <polygon points="25,50 75,50 60,60 40,60" fill="none" stroke="black" stroke-width="1.5"/>
+            <line x1="35" y1="45" x2="65" y2="45" stroke="black" stroke-width="1.3"/>
+            <text x="50" y="30" font-size="10" text-anchor="middle" fill="black">Wk</text>
+          </svg>
+        `,
+          answer: "Vrak (Wk). Symbol liknar skeppsskrov med överbyggnad.",
+        },
+        {
+          title: "Vrak med angivet djup",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="white"/>
+            <polygon points="25,52 75,52 60,62 40,62" fill="none" stroke="black" stroke-width="1.5"/>
+            <line x1="35" y1="47" x2="65" y2="47" stroke="black" stroke-width="1.3"/>
+            <text x="50" y="25" font-size="10" text-anchor="middle" fill="black">Wk</text>
+            <text x="50" y="73" font-size="10" text-anchor="middle" fill="black">6.0</text>
+          </svg>
+        `,
+          answer: "Vrak med djupangivelse (här 6,0 m till vraket).",
+        },
+        {
+          title: "Oren botten / foult",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="white"/>
+            <text x="50" y="45" font-size="16" text-anchor="middle" fill="black">Foul</text>
+          </svg>
+        `,
+          answer: "Foul / oren botten – kablar, vrakdelar eller annat skräp.",
+        },
+        {
+          title: "Fiskodling",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="white"/>
+            <rect x="20" y="25" width="60" height="30" fill="none" stroke="black" stroke-width="1.3" stroke-dasharray="3 2"/>
+            <circle cx="35" cy="40" r="2" fill="black"/>
+            <circle cx="50" cy="40" r="2" fill="black"/>
+            <circle cx="65" cy="40" r="2" fill="black"/>
+          </svg>
+        `,
+          answer:
+            "Fiskodling – inhägnat område, ofta förbjudet att köra igenom.",
+        },
+
+        /* ========= FARLEDER, ANKRING, OMRÅDEN ========= */
+
+        {
+          title: "Farled (prickad linje)",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="white"/>
+            <line x1="10" y1="40" x2="90" y2="40" stroke="black" stroke-width="2" stroke-dasharray="6 4"/>
+          </svg>
+        `,
+          answer: "Prickad linje = farled / ränna.",
+        },
+        {
+          title: "Enslinje / ledlinje",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="white"/>
+            <line x1="20" y1="70" x2="80" y2="10" stroke="magenta" stroke-width="1.5" stroke-dasharray="4 4"/>
+            <circle cx="25" cy="65" r="2.5" fill="black"/>
+            <circle cx="75" cy="15" r="2.5" fill="black"/>
+          </svg>
+        `,
+          answer: "Enslinje genom två märken/torn – använd som kurslinje.",
+        },
+        {
+          title: "Ankringsplats",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="white"/>
+            <path d="M50 20 v20 M43 25 h14 M50 40
+                     c0 8 -5 13 -13 13 h-3
+                     M50 40
+                     c0 8 5 13 13 13 h3"
+                  stroke="black" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+            <circle cx="50" cy="17" r="3" fill="black"/>
+          </svg>
+        `,
+          answer: "Ankare-symbol = ankringsplats.",
+        },
+        {
+          title: "Ankringsförbud",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="white"/>
+            <path d="M50 20 v20 M43 25 h14 M50 40
+                     c0 8 -5 13 -13 13 h-3
+                     M50 40
+                     c0 8 5 13 13 13 h3"
+                  stroke="black" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <circle cx="50" cy="17" r="3" fill="black"/>
+            <circle cx="50" cy="40" r="26" fill="none" stroke="red" stroke-width="3"/>
+            <line x1="33" y1="23" x2="67" y2="57" stroke="red" stroke-width="3"/>
+          </svg>
+        `,
+          answer:
+            "Ankar-symbol överstruken med röd ring/diagonal = ankringsförbud.",
+        },
+        {
+          title: "Hastighetsbegränsning 5 kn",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="white"/>
+            <circle cx="50" cy="40" r="25" fill="white" stroke="red" stroke-width="4"/>
+            <text x="50" y="43" font-size="18" text-anchor="middle" fill="black">5</text>
+            <text x="50" y="57" font-size="10" text-anchor="middle" fill="black">kn</text>
+          </svg>
+        `,
+          answer: "Sjövägmärke: högsta tillåtna hastighet 5 knop.",
+        },
+        {
+          title: "Begränsat / förbjudet område",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="#ffe4e6"/>
+            <rect x="15" y="20" width="70" height="40" fill="none" stroke="magenta" stroke-width="1.5" stroke-dasharray="4 3"/>
+          </svg>
+        `,
+          answer:
+            "Magenta inramat område = t.ex. förbjudet eller begränsat område.",
+        },
+
+        /* ========= BRYGGA, HAMN, SLIP ========= */
+
+        {
+          title: "Brygga / pir",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="#e0f2fe"/>
+            <rect x="0" y="55" width="40" height="25" fill="#bbf7d0"/>
+            <rect x="40" y="50" width="40" height="6" fill="black"/>
+          </svg>
+        `,
+          answer: "Tjock mörk linje ut i vattnet från land = brygga / pir.",
+        },
+        {
+          title: "Kaj",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="#e0f2fe"/>
+            <rect x="0" y="50" width="100" height="30" fill="#bbf7d0"/>
+            <line x1="15" y1="50" x2="85" y2="50" stroke="black" stroke-width="3"/>
+          </svg>
+        `,
+          answer: "Rak svart linje längs land = kajkant.",
+        },
+        {
+          title: "Slip / ramp",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="#e0f2fe"/>
+            <rect x="0" y="55" width="100" height="25" fill="#bbf7d0"/>
+            <polygon points="20,55 40,55 30,75" fill="none" stroke="black" stroke-width="2"/>
+          </svg>
+        `,
+          answer:
+            "Snedställd rampform mot vattnet = slip / båtupptagningsramp.",
+        },
+        {
+          title: "Kran",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="#e0f2fe"/>
+            <rect x="0" y="55" width="100" height="25" fill="#bbf7d0"/>
+            <rect x="40" y="40" width="6" height="15" fill="black"/>
+            <line x1="43" y1="40" x2="60" y2="30" stroke="black" stroke-width="2"/>
+            <line x1="60" y1="30" x2="60" y2="40" stroke="black" stroke-width="1.5"/>
+          </svg>
+        `,
+          answer: "Kran-symbol – används vid lastningsplats i hamn.",
+        },
+
+        /* ========= BROAR & ÖVERHÄNG ========= */
+
+        {
+          title: "Fast bro med segelfri höjd (2,3 m)",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="#e0f2fe"/>
+            <rect x="0" y="50" width="100" height="30" fill="#bbf7d0"/>
+            <rect x="10" y="45" width="80" height="4" fill="black"/>
+            <text x="50" y="40" font-size="12" text-anchor="middle" fill="black">(2,3)</text>
+          </svg>
+        `,
+          answer:
+            "Fast bro, siffrorna i parentes anger segelfri höjd (här 2,3 m).",
+        },
+        {
+          title: "Klaffbro (bascule bridge)",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="#e0f2fe"/>
+            <rect x="0" y="50" width="100" height="30" fill="#bbf7d0"/>
+            <rect x="10" y="45" width="30" height="4" fill="black"/>
+            <rect x="60" y="45" width="30" height="4" fill="black" transform="rotate(-45 60 45)"/>
+            <text x="50" y="25" font-size="10" text-anchor="middle" fill="black">Bascule bridge</text>
+          </svg>
+        `,
+          answer: "Klaffbro – rörlig bro som kan öppnas för högre fartyg.",
+        },
+        {
+          title: "Kraftledning över farled",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="#e0f2fe"/>
+            <rect x="0" y="55" width="100" height="25" fill="#bbf7d0"/>
+            <line x1="20" y1="15" x2="80" y2="15" stroke="black" stroke-width="1.5"/>
+            <polygon points="20,55 25,15 30,55" fill="none" stroke="black" stroke-width="1"/>
+            <polygon points="70,55 75,15 80,55" fill="none" stroke="black" stroke-width="1"/>
+            <text x="50" y="30" font-size="10" text-anchor="middle" fill="black">18 m</text>
+          </svg>
+        `,
+          answer: "Kraftledning med angiven fri höjd (t.ex. 18 m) över farled.",
+        },
+
+        /* ========= SJÖMÄRKEN – LATERALA ========= */
+
+        {
+          title: "Styrbordsmärke (grön lateralboj)",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="#e0f2fe"/>
+            <rect x="0" y="55" width="100" height="25" fill="#bbf7d0"/>
+            <line x1="50" y1="55" x2="50" y2="75" stroke="black" stroke-width="1.5"/>
+            <polygon points="45,40 55,40 55,55 45,55" fill="green" stroke="black" stroke-width="1"/>
+          </svg>
+        `,
+          answer:
+            "Grönt lateralmärke (boj/stång) = babordssida av farleden när du går utåt (IALA A), men på svenska kort brukar man minnas färgerna vid insegling.",
+        },
+        {
+          title: "Babordsmärke (röd lateralboj)",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="#e0f2fe"/>
+            <rect x="0" y="55" width="100" height="25" fill="#bbf7d0"/>
+            <line x1="50" y1="55" x2="50" y2="75" stroke="black" stroke-width="1.5"/>
+            <polygon points="45,40 55,40 55,55 45,55" fill="red" stroke="black" stroke-width="1"/>
+          </svg>
+        `,
+          answer:
+            "Rött lateralmärke (boj/stång) = styrbordssida vid insegling i IALA A-systemet.",
+        },
+        {
+          title: "Safe water mark (mittledsmärke)",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="#e0f2fe"/>
+            <rect x="0" y="55" width="100" height="25" fill="#bbf7d0"/>
+            <line x1="50" y1="55" x2="50" y2="75" stroke="black" stroke-width="1.5"/>
+            <rect x="45" y="35" width="10" height="20" fill="white" stroke="black" stroke-width="1"/>
+            <line x1="45" y1="40" x2="55" y2="40" stroke="red" stroke-width="2"/>
+            <line x1="45" y1="48" x2="55" y2="48" stroke="red" stroke-width="2"/>
+          </svg>
+        `,
+          answer:
+            "Safe water / mittledsmärke – säkert vatten runt om, markerar ofta mitt i farled.",
+        },
+        {
+          title: "Isolerat grundmärke",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="#e0f2fe"/>
+            <rect x="0" y="55" width="100" height="25" fill="#bbf7d0"/>
+            <line x1="50" y1="55" x2="50" y2="75" stroke="black" stroke-width="1.5"/>
+            <circle cx="50" cy="40" r="9" fill="black"/>
+            <circle cx="50" cy="40" r="4" fill="white"/>
+          </svg>
+        `,
+          answer:
+            "Isolerat grundmärke – ensam fara med säkert vatten runt omkring.",
+        },
+        {
+          title: "Specialmärke (gult)",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="#e0f2fe"/>
+            <rect x="0" y="55" width="100" height="25" fill="#bbf7d0"/>
+            <line x1="50" y1="55" x2="50" y2="75" stroke="black" stroke-width="1.5"/>
+            <rect x="45" y="40" width="10" height="12" fill="#facc15" stroke="black" stroke-width="1"/>
+          </svg>
+        `,
+          answer:
+            "Gult specialmärke – markerar särskilt område (t.ex. vattensport, kabel, reservat).",
+        },
+
+        /* ========= KARDINALMÄRKEN ========= */
+
+        {
+          title: "Nordmärke (kardinal)",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="#e0f2fe"/>
+            <rect x="0" y="55" width="100" height="25" fill="#bbf7d0"/>
+            <rect x="47" y="40" width="6" height="15" fill="black"/>
+            <polygon points="50,15 42,25 58,25" fill="black"/>
+            <polygon points="50,25 42,35 58,35" fill="black"/>
+          </svg>
+        `,
+          answer: "Kardinalmärke N – säkert vatten norr om märket.",
+        },
+        {
+          title: "Östmärke (kardinal)",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="#e0f2fe"/>
+            <rect x="0" y="55" width="100" height="25" fill="#bbf7d0"/>
+            <rect x="47" y="40" width="6" height="15" fill="black"/>
+            <polygon points="50,15 42,25 58,25" fill="black"/>
+            <polygon points="50,55 42,45 58,45" fill="black"/>
+          </svg>
+        `,
+          answer:
+            "Kardinalmärke E – säkert vatten öster om märket (topptecken isär).",
+        },
+        {
+          title: "Sydmärke (kardinal)",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="#e0f2fe"/>
+            <rect x="0" y="55" width="100" height="25" fill="#bbf7d0"/>
+            <rect x="47" y="40" width="6" height="15" fill="black"/>
+            <polygon points="50,65 42,55 58,55" fill="black"/>
+            <polygon points="50,55 42,45 58,45" fill="black"/>
+          </svg>
+        `,
+          answer:
+            "Kardinalmärke S – säkert vatten söder om märket (båda toppar nedåt).",
+        },
+        {
+          title: "Västmärke (kardinal)",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="#e0f2fe"/>
+            <rect x="0" y="55" width="100" height="25" fill="#bbf7d0"/>
+            <rect x="47" y="40" width="6" height="15" fill="black"/>
+            <polygon points="50,55 42,45 58,45" fill="black"/>
+            <polygon points="50,25 42,35 58,35" fill="black"/>
+          </svg>
+        `,
+          answer:
+            "Kardinalmärke W – säkert vatten väster om märket (toppar mot varandra).",
+        },
+
+        /* ========= FYRAR & LJUSTECKEN ========= */
+
+        {
+          title: "Fyrsymbol",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="white"/>
+            <rect x="46" y="40" width="8" height="20" fill="black"/>
+            <polygon points="50,25 43,40 57,40" fill="white" stroke="black" stroke-width="1.2"/>
+            <text x="50" y="22" font-size="10" text-anchor="middle" fill="black">Lt</text>
+          </svg>
+        `,
+          answer: "Fyr (Lt). Själva fyren markeras med tornsymbol.",
+        },
+        {
+          title: "Fast vitt ljus (F W)",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="white"/>
+            <rect x="46" y="42" width="8" height="18" fill="black"/>
+            <polygon points="50,30 44,42 56,42" fill="white" stroke="black" stroke-width="1.2"/>
+            <polygon points="52,32 80,20 80,40" fill="none" stroke="black" stroke-width="1" stroke-dasharray="2 2"/>
+            <text x="18" y="25" font-size="10" fill="black">F W</text>
+          </svg>
+        `,
+          answer: "F W = fast vitt ljus (continuous).",
+        },
+        {
+          title: "Oc R 6s",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="white"/>
+            <rect x="46" y="42" width="8" height="18" fill="black"/>
+            <polygon points="50,30 44,42 56,42" fill="white" stroke="black" stroke-width="1.2"/>
+            <polygon points="52,32 80,20 80,40" fill="none" stroke="red" stroke-width="2"/>
+            <text x="20" y="25" font-size="10" fill="black">Oc R 6s</text>
+          </svg>
+        `,
+          answer: "Occulting rött ljus, period 6 s. (Längre ljus än mörker).",
+        },
+        {
+          title: "Fl(3) W 10s",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="white"/>
+            <rect x="46" y="42" width="8" height="18" fill="black"/>
+            <polygon points="50,30 44,42 56,42" fill="white" stroke="black" stroke-width="1.2"/>
+            <polyline points="52,32 70,24 78,28" fill="none" stroke="black" stroke-width="1"/>
+            <polyline points="52,36 70,28 78,32" fill="none" stroke="black" stroke-width="1"/>
+            <polyline points="52,40 70,32 78,36" fill="none" stroke="black" stroke-width="1"/>
+            <text x="20" y="25" font-size="10" fill="black">Fl(3) W 10s</text>
+          </svg>
+        `,
+          answer: "Gruppblink, 3 vita blinkar, period 10 s.",
+        },
+
+        /* ========= LANDMÄRKEN ========= */
+
+        {
+          title: "Kyrka",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="white"/>
+            <rect x="40" y="40" width="20" height="20" fill="white" stroke="black" stroke-width="1.5"/>
+            <polygon points="50,25 38,40 62,40" fill="white" stroke="black" stroke-width="1.5"/>
+            <line x1="50" y1="18" x2="50" y2="25" stroke="black" stroke-width="1.5"/>
+            <line x1="47" y1="21" x2="53" y2="21" stroke="black" stroke-width="1.5"/>
+          </svg>
+        `,
+          answer: "Kyrka – tydligt landmärke i sjökort.",
+        },
+        {
+          title: "Torn / vattentorn",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="white"/>
+            <rect x="45" y="35" width="10" height="25" fill="white" stroke="black" stroke-width="1.5"/>
+            <circle cx="50" cy="30" r="5" fill="white" stroke="black" stroke-width="1.5"/>
+          </svg>
+        `,
+          answer: "Torn eller vattentorn – bra sjömärke från sjön.",
+        },
+        {
+          title: "Vindkraftverk",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="white"/>
+            <rect x="48" y="40" width="4" height="18" fill="black"/>
+            <line x1="50" y1="35" x2="25" y2="15" stroke="black" stroke-width="1.8"/>
+            <line x1="50" y1="35" x2="75" y2="15" stroke="black" stroke-width="1.8"/>
+            <line x1="50" y1="35" x2="50" y2="8" stroke="black" stroke-width="1.8"/>
+            <circle cx="50" cy="35" r="3" fill="black"/>
+          </svg>
+        `,
+          answer: "Vindkraftverk – används ofta som conspic landmärke.",
+        },
+
+        {
+          title: "conspic (tydligt föremål)",
+          svg: `
+          <svg ${svgCommonAttrs}>
+            <rect width="100" height="80" fill="white"/>
+            <rect x="40" y="40" width="20" height="20" fill="white" stroke="black" stroke-width="1.5"/>
+            <text x="50" y="20" font-size="10" text-anchor="middle" fill="black">conspic</text>
+          </svg>
+        `,
+          answer:
+            "conspic = conspicuous. Tydligt föremål i land som syns långt.",
+        },
+      ];
+
+      let currentIndex = 0;
+      let answerVisible = false;
+
+      const symbolEl = document.getElementById("symbol");
+      const answerEl = document.getElementById("answer");
+      const cardSideLabelEl = document.getElementById("cardSideLabel");
+      const statusTextEl = document.getElementById("statusText");
+      const cardEl = document.getElementById("card");
+
+      const prevBtn = document.getElementById("prevBtn");
+      const nextBtn = document.getElementById("nextBtn");
+      const flipBtn = document.getElementById("flipBtn");
+      const randomBtn = document.getElementById("randomBtn");
+
+      function renderCard() {
+        const card = cards[currentIndex];
+        symbolEl.innerHTML = card.svg;
+        answerEl.textContent = card.answer;
+
+        if (answerVisible) {
+          answerEl.classList.remove("hidden");
+          cardSideLabelEl.textContent = "Baksida – Förklaring";
+        } else {
+          answerEl.classList.add("hidden");
+          cardSideLabelEl.textContent = "Framsida – Sjökortssymbol";
+        }
+
+        statusTextEl.textContent = `Kort ${currentIndex + 1} av ${
+          cards.length
+        }`;
+      }
+
+      function showNext() {
+        currentIndex = (currentIndex + 1) % cards.length;
+        answerVisible = false;
+        renderCard();
+      }
+
+      function showPrev() {
+        currentIndex = (currentIndex - 1 + cards.length) % cards.length;
+        answerVisible = false;
+        renderCard();
+      }
+
+      function toggleAnswer() {
+        answerVisible = !answerVisible;
+        renderCard();
+      }
+
+      function showRandom() {
+        let newIndex = currentIndex;
+        if (cards.length > 1) {
+          while (newIndex === currentIndex) {
+            newIndex = Math.floor(Math.random() * cards.length);
+          }
+        }
+        currentIndex = newIndex;
+        answerVisible = false;
+        renderCard();
+      }
+
+      nextBtn.addEventListener("click", showNext);
+      prevBtn.addEventListener("click", showPrev);
+      flipBtn.addEventListener("click", toggleAnswer);
+      randomBtn.addEventListener("click", showRandom);
+      cardEl.addEventListener("click", toggleAnswer);
+
+      document.addEventListener("keydown", (e) => {
+        if (e.code === "ArrowRight") {
+          showNext();
+        } else if (e.code === "ArrowLeft") {
+          showPrev();
+        } else if (e.code === "Space") {
+          e.preventDefault();
+          toggleAnswer();
+        }
+      });
+
+      renderCard();
+    </script>
+  </body>
+</html>
